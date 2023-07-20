@@ -1,0 +1,14 @@
+github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
+github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
+github.com/inancgumus/prettyslice v0.0.0-20190305220808-d802ba58098f h1:Nr2FPhL+zSJ1rer6AjTG4T2rkWIJukiLC9+/RVKVFJE=
+github.com/inancgumus/prettyslice v0.0.0-20190305220808-d802ba58098f/go.mod h1:lC0BwLhC6oUR2fTZj1R3+FB5o2lQ0RukM0fKsFhitjw=
+github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
+github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
+github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+github.com/mattn/go-isatty v0.0.17 h1:BTarxUcIeDqL27Mc+vyvdWYSL28zpIhv3RoTdsLMPng=
+github.com/mattn/go-isatty v0.0.17/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
+github.com/wayneashleyberry/truecolor v1.0.1 h1:REnJBycjnvg0AFErbLx2GCmLLar8brlqm62kOKnRsGs=
+github.com/wayneashleyberry/truecolor v1.0.1/go.mod h1:fyL3jRES70g94n+Eu+XLhXYvcseza55ph8zlkmUKW7Q=
+golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.6.0 h1:MVltZSvRTcU2ljQOhs94SXPftV6DCNnZViHeQps87pQ=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
