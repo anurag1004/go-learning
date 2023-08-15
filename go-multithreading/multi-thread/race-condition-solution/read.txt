@@ -1,0 +1,20 @@
+Solution to a race condition is process/thread synchronization
+1) Multual Exclusion (only one process can access the critical section at a time)
+2) Progress (if no process is in the critical section and some processes want to enter the critical section, then only those processes can enter the critical section who are not executing in their remainder section)
+3) Bounded Waiting (there is a bound on the number of times other processes are allowed to enter the critical section after a process has made a request to enter its critical section and before that request is granted)
+
+Thread synchronization
+1) Mutex (binary Object)
+    - Used for thread synchronization not process synchronization
+    - A thread can aquire multiple mutexes but it is important to ensure that the order of acquisition is consistent across all threads to avoid deadlocks.
+    - Mutexes are recursive, meaning that a thread can aquire the same mutex multiple times without blocking.
+    - Mutexes are not reentrant, meaning that a thread cannot aquire the same mutex multiple times without blocking.
+
+To protect shared variable..
+we can use Atomic variable
+Atomic variable
+    - Atomic variables are variables that can be accessed by multiple threads and are guaranteed to be updated in a thread-safe manner.
+    - Atomic variables are typically used to protect a single variable that is accessed by multiple threads.
+    - Atomic variables are not reentrant, meaning that a thread cannot aquire the same atomic variable multiple times without blocking.
+    - Atomic variables are not recursive, meaning that a thread cannot aquire the same atomic variable multiple times without blocking.
+
