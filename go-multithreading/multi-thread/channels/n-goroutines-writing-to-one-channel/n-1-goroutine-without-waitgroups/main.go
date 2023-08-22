@@ -22,7 +22,7 @@ func main() {
 			// this for loop  means, we'll wait for any N goroutines to finish their operation
 			// after that its done, we'll not wait for any routines
 			// and close the channel (where data was being passed by the goroutines)
-			// look how we are controlling the access for the func foo()
+			// look how we are controlling the access for the func foo() [with only N routines, any extra or less routine will throw an error]
 			// if there are more than N goroutines, then after closing the channel if they'll try to put
 			// data back to channel, they will be essentially putting data to a closed channel,
 			// meaning- they'll not be able to put or pass data into the channel
