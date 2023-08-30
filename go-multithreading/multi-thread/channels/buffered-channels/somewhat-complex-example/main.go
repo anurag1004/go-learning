@@ -9,6 +9,7 @@ import (
 type Request struct {
 	num int
 	msg string
+	id  int
 }
 
 var reqChan chan *Request
@@ -24,8 +25,8 @@ func init() {
 	resChan = make(chan *Request)
 }
 func requestEmitter(numOfReqs int) {
-	for i := 0; i < numOfReqs; i++ {
-		reqChan <- &Request{num: i, msg: "client request"}
+	for i := 1; i <= numOfReqs; i++ {
+		reqChan <- &Request{num: i, msg: "client request", id: i}
 	}
 	close(reqChan)
 }
@@ -36,8 +37,8 @@ func responseGrabber() {
 	}
 	close(resChan)
 }
-func sendResponse(res *Request, wg *sync.WaitGroup) {
-	fmt.Printf("sendResponse: res:%+v [%s]\n", *res, time.Now().Format("2006-01-02 15:04:05"))
+func responseEmitter(res *Request, wg *sync.WaitGroup) {
+	fmt.Printf("responseEmitter: resId:%v [%s]\n", (*res).id, time.Now().Format("2006-01-02 15:04:05"))
 	res.msg = "Server response"
 	resChan <- res
 }
@@ -45,21 +46,30 @@ func serve(wg *sync.WaitGroup) {
 	for req := range reqChan {
 		// all the handle routines are sharing same req object, its better to create a copy of it
 		req := req
-		go handle(req, wg) // handle the req in seperate go routine
+		fmt.Printf("serve: reqId:%v Waiting...[%s]\n", (*req).id, time.Now().Format("2006-01-02 15:04:05"))
+		/*
+		 Observation:
+		 if you rollback to last commit, we were spawning a new go routine (handle routine)for each new req
+		 Even though we knew "handle" can handle max of maxOutStanding(say 5) reqs at a time
+		 By doing that, after 5 requests new routines will be simply blocked (waiting for semaphore to release)
+		 So if we have 1000 req at a time..then we are spawning 1000 new goroutines!
+		 Which is not a good idea...
+		 Instead of spawning unlimited goroutines for every reqs, we can limit the number of goroutines spawning to maxOutStanding
+		*/
+		sema <- 1 // acquire semaphore
+		go func() {
+			handle(req, wg)
+			<-sema // release semaphore after handle is done
+		}()
 	}
 
 }
 func handle(newReq *Request, wg *sync.WaitGroup) { // at max 5 reqs will be handled parallely
-	fmt.Printf("handle: req:%+v Waiting...[%s]\n", *newReq, time.Now().Format("2006-01-02 15:04:05"))
-
-	sema <- 1
-	fmt.Printf("handle: req:%+v Inside...[%s]\n", *newReq, time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Printf("handle: reqId:%v Inside...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 	val := process(newReq.num)
 	newReq.num = val
-	go sendResponse(newReq, wg) // send response using seperate go routine
-	<-sema
-
-	fmt.Printf("handle: req:%+v COMPLETED...[%s]\n", *newReq, time.Now().Format("2006-01-02 15:04:05"))
+	go responseEmitter(newReq, wg) // send response using seperate go routine
+	fmt.Printf("handle: reqId:%v COMPLETED...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 }
 func process(num int) int {
 	// sleep, for simulating some time taking task
@@ -67,7 +77,7 @@ func process(num int) int {
 	return num * num
 }
 func main() {
-	numOfReqs := 5
+	numOfReqs := 10
 	wg.Add(numOfReqs)
 	go requestEmitter(numOfReqs)
 	go responseGrabber()
