@@ -29,6 +29,8 @@ func init() {
 	serverInstances = 1
 	maxOutStanding = 5
 	fakeProcessTime = 3 * time.Second
+	// add wait groups
+	wg.Add(numOfReqs)
 }
 func requestEmitter(numOfReqs int) {
 	for i := 1; i <= numOfReqs; i++ {
@@ -43,12 +45,12 @@ func responseGrabber() {
 	}
 	close(resChan)
 }
-func responseEmitter(res *Request) {
+func responseEmitter(res *Request, msg string) {
 	log.Printf("responseEmitter: resId:%v [%s]\n", (*res).id, time.Now().Format("2006-01-02 15:04:05"))
-	res.msg = "Server response"
+	res.msg = msg
 	resChan <- res
 }
-func serve(wg *sync.WaitGroup, serveId int) {
+func serve(serveId int) {
 	sema := make(chan int, maxOutStanding)
 	for req := range reqChan {
 		// all the handle routines are sharing same req object, its better to create a copy of it
@@ -74,27 +76,29 @@ func serve(wg *sync.WaitGroup, serveId int) {
 func handle(newReq *Request) {
 	log.Printf("handle: reqId:%v Inside...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 	// blocking process
-	val := process(newReq.num)
-	newReq.num = val
-	go responseEmitter(newReq) // send response using seperate go routine
+	if val, err := process(newReq.num); err != nil {
+		go responseEmitter(newReq, fmt.Sprintf("ERROR %s", err.Error()))
+	} else {
+		newReq.num = val
+		go responseEmitter(newReq, "Server response 200") // send response using seperate go routine
+	}
 	log.Printf("handle: reqId:%v COMPLETED...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 }
-func process(num int) int {
+func process(num int) (int, error) {
 	// sleep, for simulating some time taking task
 	time.Sleep(fakeProcessTime)
-	return num * num
+	return num * num, nil
 }
 func main() {
 	fmt.Printf("No of reqs:%d\nNo of servers: %d\nRate-Limit for each server: %d\n", numOfReqs, serverInstances, maxOutStanding)
 	start := time.Now()
-	wg.Add(numOfReqs)
 	go requestEmitter(numOfReqs)
 	go responseGrabber()
 	// spawn N (defined by serverInstances variable) go routines to handle incoming reqs
 	// each go routine will handle maxOutStanding (defined by maxOutStanding variable) reqs at a time
 	// so total number of reqs handled at a time will be N * maxOutStanding
 	for i := 0; i < serverInstances; i++ {
-		go serve(&wg, i+1) // this single go routine will handle max N (defined by maxOutStanding variable) reqs concurrently at a time
+		go serve(i + 1) // this single go routine will handle max N (defined by maxOutStanding variable) reqs concurrently at a time
 	}
 	wg.Wait()
 	fmt.Printf("Elapsed time: %0.5f\n", time.Since(start).Seconds())
