@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 )
@@ -14,14 +15,20 @@ type Request struct {
 
 var reqChan chan *Request
 var resChan chan *Request
+var numOfReqs int
+var serverInstances int
 var wg sync.WaitGroup
 
-const maxOutStanding = 10
-const fakeProcessTimeInSeconds = 4
+var maxOutStanding int
+var fakeProcessTime time.Duration
 
 func init() {
 	reqChan = make(chan *Request)
 	resChan = make(chan *Request)
+	numOfReqs = 10
+	serverInstances = 1
+	maxOutStanding = 5
+	fakeProcessTime = 3 * time.Second
 }
 func requestEmitter(numOfReqs int) {
 	for i := 1; i <= numOfReqs; i++ {
@@ -31,21 +38,22 @@ func requestEmitter(numOfReqs int) {
 }
 func responseGrabber() {
 	for res := range resChan {
-		fmt.Printf("RES: %+v\n", *res)
+		log.Printf("RES: %+v\n", *res)
 		wg.Done() //mark the end of each req's response
 	}
 	close(resChan)
 }
-func responseEmitter(res *Request, wg *sync.WaitGroup) {
-	fmt.Printf("responseEmitter: resId:%v [%s]\n", (*res).id, time.Now().Format("2006-01-02 15:04:05"))
+func responseEmitter(res *Request) {
+	log.Printf("responseEmitter: resId:%v [%s]\n", (*res).id, time.Now().Format("2006-01-02 15:04:05"))
 	res.msg = "Server response"
 	resChan <- res
 }
-func serve(wg *sync.WaitGroup, sema chan int, serveId int) {
+func serve(wg *sync.WaitGroup, serveId int) {
+	sema := make(chan int, maxOutStanding)
 	for req := range reqChan {
 		// all the handle routines are sharing same req object, its better to create a copy of it
 		req := req
-		fmt.Printf("serve %d: reqId:%v Waiting...[%s]\n", serveId, (*req).id, time.Now().Format("2006-01-02 15:04:05"))
+		log.Printf("serve %d: reqId:%v Waiting...[%s]\n", serveId, (*req).id, time.Now().Format("2006-01-02 15:04:05"))
 		/*
 		 Observation:
 		 earlier, we were spawning a new go routine (handle routine)for each new req
@@ -57,29 +65,27 @@ func serve(wg *sync.WaitGroup, sema chan int, serveId int) {
 		*/
 		sema <- 1 // acquire semaphore
 		go func() {
-			handle(req, wg)
+			handle(req)
 			<-sema // release semaphore after handle is done
 		}()
 	}
 
 }
-func handle(newReq *Request, wg *sync.WaitGroup) {
-	fmt.Printf("handle: reqId:%v Inside...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
+func handle(newReq *Request) {
+	log.Printf("handle: reqId:%v Inside...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 	// blocking process
 	val := process(newReq.num)
 	newReq.num = val
-	go responseEmitter(newReq, wg) // send response using seperate go routine
-	fmt.Printf("handle: reqId:%v COMPLETED...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
+	go responseEmitter(newReq) // send response using seperate go routine
+	log.Printf("handle: reqId:%v COMPLETED...[%s]\n", (*newReq).id, time.Now().Format("2006-01-02 15:04:05"))
 }
 func process(num int) int {
 	// sleep, for simulating some time taking task
-	time.Sleep(fakeProcessTimeInSeconds * time.Second)
+	time.Sleep(fakeProcessTime)
 	return num * num
 }
 func main() {
-	numOfReqs := 500
-	serverInstances := 10
-	fmt.Printf("No of reqs:%d, MaxOutStanding:%d, No of servers: %d, s\n", numOfReqs, maxOutStanding, serverInstances)
+	fmt.Printf("No of reqs:%d\nNo of servers: %d\nRate-Limit for each server: %d\n", numOfReqs, serverInstances, maxOutStanding)
 	start := time.Now()
 	wg.Add(numOfReqs)
 	go requestEmitter(numOfReqs)
@@ -88,8 +94,7 @@ func main() {
 	// each go routine will handle maxOutStanding (defined by maxOutStanding variable) reqs at a time
 	// so total number of reqs handled at a time will be N * maxOutStanding
 	for i := 0; i < serverInstances; i++ {
-		sema := make(chan int, maxOutStanding)
-		go serve(&wg, sema, i+1) // this single go routine will handle max N (defined by maxOutStanding variable) reqs concurrently at a time
+		go serve(&wg, i+1) // this single go routine will handle max N (defined by maxOutStanding variable) reqs concurrently at a time
 	}
 	wg.Wait()
 	fmt.Printf("Elapsed time: %0.5f\n", time.Since(start).Seconds())
