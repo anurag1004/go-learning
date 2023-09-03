@@ -58,11 +58,24 @@ func main() {
 	fmt.Printf("Elapsed time: %0.5fs\n", time.Since(start).Seconds())
 
 	/*
-	 There is one problem in this approach,
-	 in real pipelines, its not always necessay that receivers would receive all the inputs
-	 from inbound channels, what if receiver dont want to recevive any further inputs, because of
-	 some error in some previous inputs or pipelines. We need to signal the upper pipelines or senders to stop sending
-	 This is called explicit cancellation
+		 There is one problem in this approach,
+		 in real pipelines, its not always necessay that receivers would receive all the inputs
+		 from inbound channels, what if receiver dont want to recevive any further inputs, because of
+		 some error in some previous inputs or pipelines. We need to signal the upper pipelines or senders to stop sending
+		 we can use two techniques- stopping short (generally receiver sends signal to upper piplines to stop sending data)
+		 Stopping Short in Go:
+			Stopping short in Go refers to abruptly terminating a goroutine without necessarily following a predefined plan or cleanup routine.
+			This can happen due to runtime errors or panics, but it's NOT a recommended way to manage goroutines.
+				When a goroutine stops short due to a panic or an unhandled error,
+				it can leave resources in an inconsistent state, making it challenging to ensure proper cleanup.
+			It's generally considered good practice to handle errors gracefully and avoid stopping goroutines abruptly.
+
+			In Go programming, explicit cancellation using the context package
+			is the preferred method for managing goroutines' termination because
+			it provides a structured and controlled way to signal cancellation and
+			perform cleanup tasks. Stopping short, which typically involves abrupt
+			terminations due to errors, should be avoided to maintain the reliability
+			and predictability of your Go programs.
 	*/
 }
 

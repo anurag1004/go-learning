@@ -60,7 +60,7 @@ func genNums(done chan struct{}, nums ...int) <-chan int {
 			select {
 			case out <- num:
 			case <-done:
-				fmt.Println("cancelling emiting data...")
+				fmt.Println("cancelling emiting data...") // do some cleanup here
 				return
 			}
 		}
