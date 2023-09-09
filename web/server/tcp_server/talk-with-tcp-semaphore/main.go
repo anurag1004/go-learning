@@ -58,7 +58,7 @@ func (srv *Server) handle(listner net.Listener) {
 }
 func (srv *Server) handleHelper(conn net.Conn, reqId int) {
 	log.Printf("connection established with client: %v", reqId)
-	fmt.Fprintf(conn, "connection accepted!")
+	fmt.Fprintf(conn, "connection accepted!\nType 'exit' to exit any time...\n")
 	str := ""
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
